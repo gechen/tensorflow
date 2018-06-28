@@ -20,8 +20,8 @@ limitations under the License.
 #include <memory>
 #include <vector>
 
-#include "grpc++/create_channel.h"
-#include "grpc++/security/credentials.h"
+#include "grpcpp/create_channel.h"
+#include "grpcpp/security/credentials.h"
 
 #include "tensorflow/compiler/xla/client/client.h"
 #include "tensorflow/compiler/xla/client/xla_client/xla_builder.h"
@@ -91,7 +91,7 @@ TEST_F(GRPCClientTestBase, AxpyTenValues) {
   auto y = builder.ConstantR1<float>(
       {5.0, -5.0, -4.0, 4.0, 3.0, -3.0, -2.0, 2.0, 1.0, -1.0});
   auto ax = builder.Mul(alpha, x);
-  auto axpy = builder.Add(ax, y);
+  builder.Add(ax, y);
 
   std::vector<float> expected = {
       1.85840735, -1.85840735, 2.28318531,   -2.28318531,  -6.42477796,

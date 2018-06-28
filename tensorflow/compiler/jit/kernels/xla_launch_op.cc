@@ -148,7 +148,7 @@ void XlaLocalLaunchBase::Compute(OpKernelContext* ctx) {
 
   XlaCompiler::Options options;
   options.client = client;
-  options.device_type = &cache->device_type();
+  options.device_type = cache->device_type();
   options.flib_def = ctx->function_library()->GetFunctionLibraryDefinition();
   options.graph_def_version = ctx->function_library()->graph_def_version();
   options.allow_cpu_custom_calls = (platform_id_ == se::host::kHostPlatformId);
@@ -256,10 +256,9 @@ XlaLocalLaunchOp::~XlaLocalLaunchOp() {
   VLOG(1) << "XlaLocalLaunchOp destroyed";
 }
 
-REGISTER_KERNEL_BUILDER(Name("_XlaLaunch").Device(DEVICE_CPU),
-                        XlaLocalLaunchOp);
+REGISTER_KERNEL_BUILDER(Name("XlaLaunch").Device(DEVICE_CPU), XlaLocalLaunchOp);
 
-REGISTER_KERNEL_BUILDER(Name("_XlaLaunch")
+REGISTER_KERNEL_BUILDER(Name("XlaLaunch")
                             .Device(DEVICE_GPU)
                             .HostMemory("constants")
                             .HostMemory("resources"),

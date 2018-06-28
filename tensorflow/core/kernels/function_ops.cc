@@ -254,6 +254,7 @@ class SymbolicGradientOp : public AsyncOpKernel {
     opts.runner = ctx->runner();
     opts.stats_collector = ctx->stats_collector();
     opts.step_container = ctx->step_container();
+    opts.collective_executor = ctx->collective_executor();
     std::vector<Tensor> args;
     args.reserve(ctx->num_inputs());
     for (int i = 0; i < ctx->num_inputs(); ++i) {
@@ -301,15 +302,21 @@ class RemoteCallOp : public AsyncOpKernel {
   ~RemoteCallOp() override {}
 
   void ComputeAsync(OpKernelContext* ctx, DoneCallback done) override {
-    const Tensor* target;
-    OP_REQUIRES_OK_ASYNC(ctx, ctx->input("target", &target), done);
-    const string& target_device =
-        DeviceNameUtils::CanonicalizeDeviceName(target->scalar<string>()());
-
     FunctionLibraryRuntime* lib = ctx->function_library();
     OP_REQUIRES_ASYNC(ctx, lib != nullptr,
                       errors::Internal("No function library is provided."),
                       done);
+
+    const string& source_device = lib->device()->name();
+    const Tensor* target;
+    OP_REQUIRES_OK_ASYNC(ctx, ctx->input("target", &target), done);
+    string target_device;
+    OP_REQUIRES_OK_ASYNC(
+        ctx,
+        DeviceNameUtils::CanonicalizeDeviceName(target->scalar<string>()(),
+                                                source_device, &target_device),
+        done);
+
     AttrValueMap attr_values = func_.attr();
     FunctionLibraryRuntime::InstantiateOptions instantiate_opts;
     instantiate_opts.target = target_device;
@@ -344,7 +351,7 @@ class RemoteCallOp : public AsyncOpKernel {
     FunctionLibraryRuntime::Options opts;
     opts.step_id = ctx->step_id();
     opts.runner = ctx->runner();
-    opts.source_device = lib->device()->name();
+    opts.source_device = source_device;
     if (opts.source_device != target_device) {
       opts.remote_execution = true;
     }

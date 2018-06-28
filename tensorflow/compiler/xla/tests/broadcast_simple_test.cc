@@ -262,7 +262,7 @@ XLA_TEST_P(BroadcastR3ImplicitTest, Doit) {
 
   auto r3_implicit_parameter = builder.Parameter(0, r3_implicit_shape, "input");
   auto r3_parameter = builder.Parameter(1, r3_shape, "input");
-  XlaOp op = BuildBinOp(spec.op, r3_implicit_parameter, r3_parameter, &builder);
+  BuildBinOp(spec.op, r3_implicit_parameter, r3_parameter, &builder);
 
   Array3D<float> expected_array(spec.output_bounds[0], spec.output_bounds[1],
                                 spec.output_bounds[2]);
@@ -516,7 +516,7 @@ XLA_TEST_P(BroadcastR2ImplicitTest, Doit) {
 
   XlaOp op1 =
       BuildBinOp(spec.op1, r2_implicit_parameter1, r2_parameter, &builder);
-  XlaOp op2 = BuildBinOp(spec.op2, op1, r2_implicit_parameter2, &builder);
+  BuildBinOp(spec.op2, op1, r2_implicit_parameter2, &builder);
 
   Array2D<float> expected_array(spec.output_bounds[0], spec.output_bounds[1]);
 
@@ -671,7 +671,7 @@ XLA_TEST_F(BroadcastSimpleTest, InvalidInDimensionBroadcasting) {
   auto result_status = Execute(&b, {});
   EXPECT_FALSE(result_status.ok());
   EXPECT_THAT(result_status.status().error_message(),
-              HasSubstr("op BINOP_ADD with incompatible shapes"));
+              HasSubstr("op add with incompatible shapes"));
 }
 
 XLA_TEST_F(BroadcastSimpleTest, InvalidDegenerateBroadcasting) {
@@ -684,7 +684,7 @@ XLA_TEST_F(BroadcastSimpleTest, InvalidDegenerateBroadcasting) {
   auto result_status = Execute(&b, {});
   EXPECT_FALSE(result_status.ok());
   EXPECT_THAT(result_status.status().error_message(),
-              HasSubstr("op BINOP_ADD with incompatible shapes"));
+              HasSubstr("op add with incompatible shapes"));
 }
 
 }  // namespace

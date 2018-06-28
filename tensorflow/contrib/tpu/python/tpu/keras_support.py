@@ -51,6 +51,7 @@ import collections
 import re
 import time
 
+from tensorflow.contrib.cluster_resolver.python.training import tpu_cluster_resolver
 from tensorflow.contrib.framework.python.framework import experimental
 from tensorflow.contrib.tpu.proto import compilation_result_pb2 as tpu_compilation_result
 from tensorflow.contrib.tpu.python.ops import tpu_ops
@@ -61,11 +62,11 @@ from tensorflow.python.client import session as tf_session
 from tensorflow.python.estimator import model_fn as model_fn_lib
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_spec
-from tensorflow.python.keras._impl.keras import backend as K
-from tensorflow.python.keras._impl.keras import layers
-from tensorflow.python.keras._impl.keras import models
-from tensorflow.python.keras._impl.keras import optimizers as keras_optimizers
-from tensorflow.python.keras._impl.keras.layers import embeddings
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import layers
+from tensorflow.python.keras import models
+from tensorflow.python.keras import optimizers as keras_optimizers
+from tensorflow.python.keras.layers import embeddings
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.platform import tf_logging as logging
@@ -368,10 +369,27 @@ class TPUFunction(object):
 
 
 @experimental
-def setup_tpu_session(master):
-  """Initializes and returns a Keras/TF session connected the TPU `master`."""
+def setup_tpu_session(tpu_name_or_address):
+  """Initializes and returns a Keras/TF session connected the TPU `master`.
+
+  Args:
+    tpu_name_or_address: A string that is either the name of the Cloud TPU,
+      the grpc address of the Cloud TPU, or (Googlers only) the BNS name of the
+      Cloud TPU. If tpu_name_or_address is None, the TPUClusterResolver will
+      examine the environment to determine a potential Cloud TPU to use.
+
+  Returns:
+    A `tf.Session`.
+  """
+  cluster_resolver = tpu_cluster_resolver.TPUClusterResolver(
+      tpu_name_or_address)
+  cluster_spec = cluster_resolver.cluster_spec()
   session = tf_session.Session(
-      target=master, config=config_pb2.ConfigProto(isolate_session_state=True))
+      target=cluster_resolver.master(),
+      config=config_pb2.ConfigProto(
+          isolate_session_state=True))
+  if cluster_spec:
+    session.cluster_def.CopyFrom(cluster_spec.as_cluster_def())
   K.set_session(session)
   K.get_session().run(tpu.initialize_system())
   return session
@@ -400,7 +418,7 @@ class KerasTPUModel(models.Model):
   """TPU compatible Keras model wrapper."""
 
   def __init__(self, inputs, outputs, name, replicas=1):
-    super(models.Model, self).__init__(
+    super(models.Model, self).__init__(  # pylint: disable=bad-super-call
         inputs=inputs,
         outputs=outputs,
         name=name,

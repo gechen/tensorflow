@@ -190,7 +190,7 @@ def cnn_model_fn(features, labels, mode):
 The following sections (with headings corresponding to each code block above)
 dive deeper into the `tf.layers` code used to create each layer, as well as how
 to calculate loss, configure the training op, and generate predictions. If
-you're already experienced with CNNs and @{$get_started/custom_estimators$TensorFlow `Estimator`s},
+you're already experienced with CNNs and @{$custom_estimators$TensorFlow `Estimator`s},
 and find the above code intuitive, you may want to skim these sections or just
 skip ahead to ["Training and Evaluating the CNN MNIST Classifier"](#train_eval_mnist).
 
@@ -470,51 +470,18 @@ as the loss metric. The following code calculates cross entropy when the model
 runs in either `TRAIN` or `EVAL` mode:
 
 ```python
-onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
-loss = tf.losses.softmax_cross_entropy(
-    onehot_labels=onehot_labels, logits=logits)
+loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
 ```
 
 Let's take a closer look at what's happening above.
 
-Our `labels` tensor contains a list of predictions for our examples, e.g. `[1,
-9, ...]`. In order to calculate cross-entropy, first we need to convert `labels`
-to the corresponding
-[one-hot encoding](https://www.quora.com/What-is-one-hot-encoding-and-when-is-it-used-in-data-science):
+Our `labels` tensor contains a list of prediction indices for our examples, e.g. `[1,
+9, ...]`. `logits` contains the linear outputs of our last layer. 
 
-```none
-[[0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
- ...]
-```
+`tf.losses.sparse_softmax_cross_entropy`, calculates the softmax crossentropy
+(aka: categorical crossentropy, negative log-likelihood) from these two inputs
+in an efficient, numerically stable way.
 
-We use the @{tf.one_hot} function
-to perform this conversion. `tf.one_hot()` has two required arguments:
-
-*   `indices`. The locations in the one-hot tensor that will have "on
-    values"—i.e., the locations of `1` values in the tensor shown above.
-*   `depth`. The depth of the one-hot tensor—i.e., the number of target classes.
-    Here, the depth is `10`.
-
-The following code creates the one-hot tensor for our labels, `onehot_labels`:
-
-```python
-onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=10)
-```
-
-Because `labels` contains a series of values from 0–9, `indices` is just our
-`labels` tensor, with values cast to integers. The `depth` is `10` because we
-have 10 possible target classes, one for each digit.
-
-Next, we compute cross-entropy of `onehot_labels` and the softmax of the
-predictions from our logits layer. `tf.losses.softmax_cross_entropy()` takes
-`onehot_labels` and `logits` as arguments, performs softmax activation on
-`logits`, calculates cross-entropy, and returns our `loss` as a scalar `Tensor`:
-
-```python
-loss = tf.losses.softmax_cross_entropy(
-    onehot_labels=onehot_labels, logits=logits)
-```
 
 ### Configure the Training Op
 
@@ -534,8 +501,8 @@ if mode == tf.estimator.ModeKeys.TRAIN:
 ```
 
 > Note: For a more in-depth look at configuring training ops for Estimator model
-> functions, see @{$get_started/custom_estimators#defining-the-training-op-for-the-model$"Defining the training op for the model"}
-> in the @{$get_started/custom_estimators$"Creating Estimations in tf.estimator"} tutorial.
+> functions, see @{$custom_estimators#defining-the-training-op-for-the-model$"Defining the training op for the model"}
+> in the @{$custom_estimators$"Creating Estimations in tf.estimator"} tutorial.
 
 
 ### Add evaluation metrics
@@ -600,7 +567,7 @@ be saved (here, we specify the temp directory `/tmp/mnist_convnet_model`, but
 feel free to change to another directory of your choice).
 
 > Note: For an in-depth walkthrough of the TensorFlow `Estimator` API, see the
-> tutorial @{$get_started/custom_estimators$"Creating Estimators in tf.estimator."}
+> tutorial @{$custom_estimators$"Creating Estimators in tf.estimator."}
 
 ### Set Up a Logging Hook {#set_up_a_logging_hook}
 
@@ -627,7 +594,7 @@ operation earlier when we generated the probabilities in `cnn_model_fn`.
 > argument, TensorFlow will assign a default name. A couple easy ways to
 > discover the names applied to operations are to visualize your graph on
 > @{$graph_viz$TensorBoard}) or to enable the
-> @{$programmers_guide/debugger$TensorFlow Debugger (tfdbg)}.
+> @{$guide/debugger$TensorFlow Debugger (tfdbg)}.
 
 Next, we create the `LoggingTensorHook`, passing `tensors_to_log` to the
 `tensors` argument. We set `every_n_iter=50`, which specifies that probabilities
@@ -719,7 +686,7 @@ Here, we've achieved an accuracy of 97.3% on our test data set.
 To learn more about TensorFlow Estimators and CNNs in TensorFlow, see the
 following resources:
 
-*   @{$get_started/custom_estimators$Creating Estimators in tf.estimator}
+*   @{$custom_estimators$Creating Estimators in tf.estimator}
     provides an introduction to the TensorFlow Estimator API. It walks through
     configuring an Estimator, writing a model function, calculating loss, and
     defining a training op.

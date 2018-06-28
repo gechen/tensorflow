@@ -37,7 +37,6 @@ cc_library(
     ],
 )
 
-# TODO(b/74197823): Replace computation_builder with xla_builder.
 cc_library(
     name = "xla_builder",
     srcs = ["xla_builder.cc"],
@@ -53,6 +52,7 @@ cc_library(
         "//tensorflow/compiler/xla:util",
         "//tensorflow/compiler/xla:xla_data_proto",
         "//tensorflow/compiler/xla/client:padding",
+        "//tensorflow/compiler/xla/client:sharding_builder",
         "//tensorflow/compiler/xla/service:hlo",
         "//tensorflow/compiler/xla/service:hlo_proto",
         "//tensorflow/compiler/xla/service:shape_inference",

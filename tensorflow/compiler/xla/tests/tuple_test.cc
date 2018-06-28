@@ -495,7 +495,7 @@ XLA_TEST_F(TupleTest, ComplexTuples) {
   auto sum = Literal::CreateR2<complex64>({{{111, 222}, {331, 442}},
                                            {{1011, 2022}, {3031, 4042}},
                                            {{10011, 20022}, {30031, 40042}}});
-  auto prod = Literal::CreateFromShape(sum->shape());
+  auto prod = MakeUnique<Literal>(sum->shape());
   ASSERT_TRUE(prod->Populate<complex64>(
                       [&sum](tensorflow::gtl::ArraySlice<int64> indexes) {
                         return sum->Get<complex64>(indexes) *
@@ -532,8 +532,8 @@ XLA_TEST_F(TupleHloTest, DISABLED_ON_INTERPRETER(BitcastAfterGTE)) {
   auto param = Literal::MakeTupleOwned(Literal::CreateR1<float>({1, 2, 3}));
   auto result = ExecuteNoHloPasses(std::move(module), {param.get()});
   EXPECT_TRUE(LiteralTestUtil::Equal(
-      *result,
-      *Literal::MakeTupleOwned(Literal::CreateR2<float>({{1, 2, 3}}))));
+      *Literal::MakeTupleOwned(Literal::CreateR2<float>({{1, 2, 3}})),
+      *result));
 }
 
 }  // namespace
